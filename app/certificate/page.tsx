@@ -1,105 +1,109 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useRef } from "react"
-import { useProgressStore } from "@/lib/progress-store"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Download, Share2, Award, Sparkles } from "lucide-react"
-import confetti from "canvas-confetti"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useRef } from "react";
+import { useProgressStore } from "@/lib/progress-store";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Download, Share2, Award, Sparkles } from "lucide-react";
+import confetti from "canvas-confetti";
+import { useRouter } from "next/navigation";
 
 export default function CertificatePage() {
-  const router = useRouter()
-  const { lessons } = useProgressStore()
-  const [name, setName] = useState("")
-  const [certificateGenerated, setCertificateGenerated] = useState(false)
-  const [mounted, setMounted] = useState(false)
-  const certificateRef = useRef<HTMLDivElement>(null)
+  const router = useRouter();
+  const { lessons, getTotalProgress } = useProgressStore();
+  const [name, setName] = useState("");
+  const [certificateGenerated, setCertificateGenerated] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const certificateRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
-  const completedLessons = mounted ? Object.values(lessons).filter((l) => l.completed).length : 0
-  const allLessonsComplete = completedLessons === 6
+  const completedLessons = mounted ? Object.values(lessons).filter((l) => l.completed).length : 0;
+  const allLessonsComplete = completedLessons === 6;
   const currentDate = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
-  })
+  });
 
   const handleGenerateCertificate = () => {
-    if (!name.trim()) return
-    setCertificateGenerated(true)
+    if (!name.trim()) return;
 
-    // Confetti animation
-    const duration = 3000
-    const animationEnd = Date.now() + duration
-    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }
+    setCertificateGenerated(true);
+
+    // Trigger confetti animation
+    const duration = 3000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
     function randomInRange(min: number, max: number) {
-      return Math.random() * (max - min) + min
+      return Math.random() * (max - min) + min;
     }
 
     const interval: NodeJS.Timeout = setInterval(() => {
-      const timeLeft = animationEnd - Date.now()
+      const timeLeft = animationEnd - Date.now();
+
       if (timeLeft <= 0) {
-        return clearInterval(interval)
+        return clearInterval(interval);
       }
 
-      const particleCount = 50 * (timeLeft / duration)
+      const particleCount = 50 * (timeLeft / duration);
       confetti({
         ...defaults,
         particleCount,
         origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-      })
+      });
       confetti({
         ...defaults,
         particleCount,
         origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-      })
-    }, 250)
-  }
+      });
+    }, 250);
+  };
 
-  // ✅ Fixed Download as PNG Image
-  const handleDownloadImage = async () => {
+  const handleDownloadPNG = async () => {
     if (!certificateRef.current) {
-      console.error("Certificate not found.")
-      return
+      alert("Certificate element not found");
+      console.error("Certificate ref is null");
+      return;
     }
 
     try {
-      const html2canvas = (await import("html2canvas")).default
-
+      const html2canvas = (await import("html2canvas")).default;
       const canvas = await html2canvas(certificateRef.current, {
-        scale: 2,
+        scale: 2, // Higher scale for better quality
         backgroundColor: "#ffffff",
-      })
+        logging: true, // Enable for debugging
+        useCORS: true, // Handle cross-origin assets if needed
+      });
 
-      const imgData = canvas.toDataURL("image/png")
-      console.log("Image generated, length:", imgData.length)
-
-      // Create a download link in the DOM
-      const link = document.createElement("a")
-      link.href = imgData
-      link.download = `fairblock-learn-certificate-${name.replace(/\s+/g, "-").toLowerCase()}.png`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      // Convert canvas to PNG and trigger download
+      const imgData = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.href = imgData;
+      link.download = `fairblock-learn-certificate-${name.replace(/\s+/g, "-").toLowerCase()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (error) {
-      console.error("Error generating image:", error)
+      console.error("Error generating PNG:", error);
+      alert("Failed to generate PNG. Please try again.");
     }
-  }
+  };
 
   const handleShareToX = () => {
-    const text = `I just completed Fairblock Learn and earned my certificate in blockchain privacy and encryption! 🎓🔐`
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`
-    window.open(url, "_blank")
-  }
+    const text = `I just completed Fairblock Learn and earned my certificate in blockchain privacy and encryption! 🎓🔐`;
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank");
+  };
 
-  if (!mounted) return null
+  if (!mounted) {
+    return null;
+  }
 
   if (!allLessonsComplete) {
     return (
@@ -121,7 +125,7 @@ export default function CertificatePage() {
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   if (!certificateGenerated) {
@@ -151,7 +155,7 @@ export default function CertificatePage() {
                   onChange={(e) => setName(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && name.trim()) {
-                      handleGenerateCertificate()
+                      handleGenerateCertificate();
                     }
                   }}
                 />
@@ -168,7 +172,7 @@ export default function CertificatePage() {
           </Card>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -218,7 +222,8 @@ export default function CertificatePage() {
               <p className="mb-4 text-lg text-gray-700">has successfully completed</p>
               <p className="mb-6 text-2xl font-bold text-primary">Fairblock Learn</p>
               <p className="text-gray-700">
-                Demonstrating proficiency in blockchain privacy, encryption, confidentiality, and confidential stablecoins
+                Demonstrating proficiency in blockchain privacy, encryption, confidentiality, and confidential
+                stablecoins
               </p>
             </div>
 
@@ -243,11 +248,11 @@ export default function CertificatePage() {
         {/* Actions */}
         <div className="flex flex-col gap-4 sm:flex-row">
           <Button
-            onClick={handleDownloadImage}
+            onClick={handleDownloadPNG}
             className="flex-1 bg-gradient-to-r from-[#55C2F6] to-[#0ABAB5] text-white hover:opacity-90"
           >
             <Download className="mr-2 h-4 w-4" />
-            Download Image
+            Download PNG
           </Button>
           <Button onClick={handleShareToX} variant="outline" className="flex-1 bg-transparent">
             <Share2 className="mr-2 h-4 w-4" />
@@ -256,5 +261,5 @@ export default function CertificatePage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
