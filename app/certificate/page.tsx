@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Download, Share2, Award, Sparkles } from "lucide-react"
 import confetti from "canvas-confetti"
 import { useRouter } from "next/navigation"
-import html2canvas from "html2canvas"   // ✅ added import
 
 export default function CertificatePage() {
   const router = useRouter()
@@ -46,7 +45,9 @@ export default function CertificatePage() {
 
     const interval: NodeJS.Timeout = setInterval(() => {
       const timeLeft = animationEnd - Date.now()
-      if (timeLeft <= 0) return clearInterval(interval)
+      if (timeLeft <= 0) {
+        return clearInterval(interval)
+      }
 
       const particleCount = 50 * (timeLeft / duration)
       confetti({
@@ -62,15 +63,25 @@ export default function CertificatePage() {
     }, 250)
   }
 
-  // ✅ fixed: Download as PNG image
+  // ✅ Fixed Download as PNG Image
   const handleDownloadImage = async () => {
-    if (!certificateRef.current) return
+    if (!certificateRef.current) {
+      console.error("Certificate not found.")
+      return
+    }
+
     try {
+      const html2canvas = (await import("html2canvas")).default
+
       const canvas = await html2canvas(certificateRef.current, {
         scale: 2,
         backgroundColor: "#ffffff",
       })
+
       const imgData = canvas.toDataURL("image/png")
+      console.log("Image generated, length:", imgData.length)
+
+      // Create a download link in the DOM
       const link = document.createElement("a")
       link.href = imgData
       link.download = `fairblock-learn-certificate-${name.replace(/\s+/g, "-").toLowerCase()}.png`
@@ -207,8 +218,7 @@ export default function CertificatePage() {
               <p className="mb-4 text-lg text-gray-700">has successfully completed</p>
               <p className="mb-6 text-2xl font-bold text-primary">Fairblock Learn</p>
               <p className="text-gray-700">
-                Demonstrating proficiency in blockchain privacy, encryption, confidentiality, and confidential
-                stablecoins
+                Demonstrating proficiency in blockchain privacy, encryption, confidentiality, and confidential stablecoins
               </p>
             </div>
 
