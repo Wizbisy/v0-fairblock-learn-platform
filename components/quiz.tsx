@@ -41,7 +41,9 @@ export function Quiz({ lesson, lessonId }: QuizProps) {
   }, [lesson.quiz])
 
   const handleAnswerSelect = (index: number) => {
-    setSelectedAnswer(index)
+    if (!showResult) {
+      setSelectedAnswer(index)
+    }
   }
 
   const handleSubmitAnswer = () => {
@@ -51,14 +53,6 @@ export function Quiz({ lesson, lessonId }: QuizProps) {
     const isCorrect = selectedAnswer === currentQuiz.correctAnswer
     const newAnswers = [...answers, selectedAnswer]
     setAnswers(newAnswers)
-
-    console.log("[v0] Answer submitted:", {
-      questionIndex: currentQuestion,
-      selectedAnswer,
-      correctAnswer: currentQuiz.correctAnswer,
-      isCorrect,
-      timestamp: Date.now(),
-    })
 
     if (isCorrect) {
       setScore(score + 1)
@@ -74,17 +68,6 @@ export function Quiz({ lesson, lessonId }: QuizProps) {
       setShowResult(false)
     } else {
       const finalScore = score + (selectedAnswer === shuffledQuestions[currentQuestion].correctAnswer ? 1 : 0)
-      const timeSpent = Date.now() - quizStartTime
-
-      console.log("[v0] Quiz completed:", {
-        lessonId,
-        finalScore,
-        totalQuestions: shuffledQuestions.length,
-        percentage: (finalScore / shuffledQuestions.length) * 100,
-        timeSpent,
-        answers: answers,
-        timestamp: Date.now(),
-      })
 
       setQuizCompleted(true)
       completeLesson(lessonId, finalScore)
@@ -101,8 +84,6 @@ export function Quiz({ lesson, lessonId }: QuizProps) {
     setAnswers([])
     setQuizCompleted(false)
     setQuizStartTime(Date.now())
-
-    console.log("[v0] Quiz restarted with shuffled questions")
   }
 
   const currentQuiz = shuffledQuestions[currentQuestion]
@@ -164,37 +145,43 @@ export function Quiz({ lesson, lessonId }: QuizProps) {
         </CardHeader>
         <CardContent className="space-y-6">
           <RadioGroup
-            value={selectedAnswer?.toString()}
+            key={currentQuestion}
+            value={selectedAnswer !== null ? selectedAnswer.toString() : undefined}
             onValueChange={(value) => handleAnswerSelect(Number.parseInt(value))}
+            disabled={showResult}
           >
             <div className="space-y-3">
-              {currentQuiz.options.map((option, index) => (
-                <div
-                  key={index}
-                  className={`flex items-center space-x-3 rounded-lg border p-4 transition-colors ${
-                    showResult
-                      ? index === currentQuiz.correctAnswer
-                        ? "border-green-500 bg-green-50 dark:bg-green-950"
-                        : index === selectedAnswer
-                          ? "border-red-500 bg-red-50 dark:bg-red-950"
-                          : ""
-                      : selectedAnswer === index
-                        ? "border-primary bg-primary/5"
-                        : "hover:bg-muted/50"
-                  }`}
-                >
-                  <RadioGroupItem value={index.toString()} id={`option-${index}`} disabled={showResult} />
-                  <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
-                    {option}
-                  </Label>
-                  {showResult && index === currentQuiz.correctAnswer && (
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                  )}
-                  {showResult && index === selectedAnswer && index !== currentQuiz.correctAnswer && (
-                    <XCircle className="h-5 w-5 text-red-600" />
-                  )}
-                </div>
-              ))}
+              {currentQuiz.options.map((option, index) => {
+                const isSelected = selectedAnswer === index
+                const isCorrectAnswer = index === currentQuiz.correctAnswer
+                const showAsCorrect = showResult && isCorrectAnswer
+                const showAsIncorrect = showResult && isSelected && !isCorrectAnswer
+
+                return (
+                  <div
+                    key={index}
+                    className={`flex items-center space-x-3 rounded-lg border p-4 transition-colors ${
+                      showAsCorrect
+                        ? "border-green-500 bg-green-50"
+                        : showAsIncorrect
+                          ? "border-red-500 bg-red-50"
+                          : isSelected && !showResult
+                            ? "border-primary bg-primary/5"
+                            : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <RadioGroupItem value={index.toString()} id={`option-${index}`} disabled={showResult} />
+                    <Label
+                      htmlFor={`option-${index}`}
+                      className={`flex-1 ${showResult ? "cursor-default" : "cursor-pointer"}`}
+                    >
+                      {option}
+                    </Label>
+                    {showAsCorrect && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                    {showAsIncorrect && <XCircle className="h-5 w-5 text-red-600" />}
+                  </div>
+                )
+              })}
             </div>
           </RadioGroup>
 
@@ -202,11 +189,11 @@ export function Quiz({ lesson, lessonId }: QuizProps) {
             <div
               className={`rounded-lg p-4 ${
                 isCorrect
-                  ? "bg-green-50 text-green-900 dark:bg-green-950 dark:text-green-100"
-                  : "bg-red-50 text-red-900 dark:bg-red-950 dark:text-red-100"
+                  ? "bg-green-50 text-green-900 border border-green-200"
+                  : "bg-red-50 text-red-900 border border-red-200"
               }`}
             >
-              <p className="font-medium">{isCorrect ? "Correct!" : "Incorrect"}</p>
+              <p className="font-semibold text-lg">{isCorrect ? "✓ Correct!" : "✗ Incorrect"}</p>
               {!isCorrect && (
                 <p className="mt-1 text-sm">The correct answer is: {currentQuiz.options[currentQuiz.correctAnswer]}</p>
               )}
