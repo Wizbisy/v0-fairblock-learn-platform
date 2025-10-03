@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation"
 
 export default function CertificatePage() {
   const router = useRouter()
-  const { lessons, getTotalProgress } = useProgressStore()
+  const { lessons } = useProgressStore()
   const [name, setName] = useState("")
   const [certificateGenerated, setCertificateGenerated] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -35,7 +35,7 @@ export default function CertificatePage() {
 
     setCertificateGenerated(true)
 
-    // Trigger confetti animation
+    // Confetti animation
     const duration = 3000
     const animationEnd = Date.now() + duration
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }
@@ -65,12 +65,12 @@ export default function CertificatePage() {
     }, 250)
   }
 
-  const handleDownloadPDF = async () => {
+  // Download as PNG image
+  const handleDownloadImage = async () => {
     if (!certificateRef.current) return
 
     try {
       const html2canvas = (await import("html2canvas")).default
-      const jsPDF = (await import("jspdf")).default
 
       const canvas = await html2canvas(certificateRef.current, {
         scale: 2,
@@ -78,16 +78,13 @@ export default function CertificatePage() {
       })
 
       const imgData = canvas.toDataURL("image/png")
-      const pdf = new jsPDF({
-        orientation: "landscape",
-        unit: "px",
-        format: [canvas.width, canvas.height],
-      })
 
-      pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height)
-      pdf.save(`fairblock-learn-certificate-${name.replace(/\s+/g, "-").toLowerCase()}.pdf`)
+      const link = document.createElement("a")
+      link.href = imgData
+      link.download = `fairblock-learn-certificate-${name.replace(/\s+/g, "-").toLowerCase()}.png`
+      link.click()
     } catch (error) {
-      console.error("Error generating PDF:", error)
+      console.error("Error generating image:", error)
     }
   }
 
@@ -244,11 +241,11 @@ export default function CertificatePage() {
         {/* Actions */}
         <div className="flex flex-col gap-4 sm:flex-row">
           <Button
-            onClick={handleDownloadPDF}
+            onClick={handleDownloadImage}
             className="flex-1 bg-gradient-to-r from-[#55C2F6] to-[#0ABAB5] text-white hover:opacity-90"
           >
             <Download className="mr-2 h-4 w-4" />
-            Download PDF
+            Download Image
           </Button>
           <Button onClick={handleShareToX} variant="outline" className="flex-1 bg-transparent">
             <Share2 className="mr-2 h-4 w-4" />
