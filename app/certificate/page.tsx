@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Download, Share2, Award, Sparkles } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useRouter } from "next/navigation";
+import html2canvas from "html2canvas"; // Static import
 
 export default function CertificatePage() {
   const router = useRouter();
@@ -73,25 +74,33 @@ export default function CertificatePage() {
     }
 
     try {
-      const html2canvas = (await import("html2canvas")).default;
+      console.log("Starting PNG generation...");
+      // Add slight delay to ensure DOM is fully rendered
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const canvas = await html2canvas(certificateRef.current, {
         scale: 2, // Higher scale for better quality
         backgroundColor: "#ffffff",
         logging: true, // Enable for debugging
-        useCORS: true, // Handle cross-origin assets if needed
+        useCORS: true, // Handle cross-origin assets
+        windowFonts: true, // Ensure fonts render
       });
+      console.log("Canvas generated:", canvas.width, canvas.height);
 
       // Convert canvas to PNG and trigger download
       const imgData = canvas.toDataURL("image/png");
+      console.log("Image data length:", imgData.length);
+
       const link = document.createElement("a");
       link.href = imgData;
       link.download = `fairblock-learn-certificate-${name.replace(/\s+/g, "-").toLowerCase()}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      console.log("PNG download triggered");
     } catch (error) {
       console.error("Error generating PNG:", error);
-      alert("Failed to generate PNG. Please try again.");
+      alert("Failed to generate PNG. Check the console for details and try again.");
     }
   };
 
