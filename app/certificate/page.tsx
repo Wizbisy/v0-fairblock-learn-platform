@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Download, Share2, Award, Sparkles } from "lucide-react"
 import confetti from "canvas-confetti"
 import { useRouter } from "next/navigation"
+import html2canvas from "html2canvas"   // ✅ added import
 
 export default function CertificatePage() {
   const router = useRouter()
@@ -32,7 +33,6 @@ export default function CertificatePage() {
 
   const handleGenerateCertificate = () => {
     if (!name.trim()) return
-
     setCertificateGenerated(true)
 
     // Confetti animation
@@ -46,10 +46,7 @@ export default function CertificatePage() {
 
     const interval: NodeJS.Timeout = setInterval(() => {
       const timeLeft = animationEnd - Date.now()
-
-      if (timeLeft <= 0) {
-        return clearInterval(interval)
-      }
+      if (timeLeft <= 0) return clearInterval(interval)
 
       const particleCount = 50 * (timeLeft / duration)
       confetti({
@@ -65,24 +62,21 @@ export default function CertificatePage() {
     }, 250)
   }
 
-  // Download as PNG image
+  // ✅ fixed: Download as PNG image
   const handleDownloadImage = async () => {
     if (!certificateRef.current) return
-
     try {
-      const html2canvas = (await import("html2canvas")).default
-
       const canvas = await html2canvas(certificateRef.current, {
         scale: 2,
         backgroundColor: "#ffffff",
       })
-
       const imgData = canvas.toDataURL("image/png")
-
       const link = document.createElement("a")
       link.href = imgData
       link.download = `fairblock-learn-certificate-${name.replace(/\s+/g, "-").toLowerCase()}.png`
+      document.body.appendChild(link)
       link.click()
+      document.body.removeChild(link)
     } catch (error) {
       console.error("Error generating image:", error)
     }
@@ -94,9 +88,7 @@ export default function CertificatePage() {
     window.open(url, "_blank")
   }
 
-  if (!mounted) {
-    return null
-  }
+  if (!mounted) return null
 
   if (!allLessonsComplete) {
     return (
